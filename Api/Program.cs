@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -90,11 +91,11 @@ string GerarTokenJWT(Administrador adm){ // Aqui você coloca as credenciais de 
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
     
-        var claims = new List<Claim>();
+        var claims = new List<Claim>()
         {
-            new Claim("Email", adm.Email);
-            new Claim(ClaimTypes.Role, adm.Perfil);
-            new Claim("Perfil", adm.Perfil);
+            new Claim("Email", adm.Email),
+            new Claim("Perfil", adm.Perfil),
+            new Claim(ClaimTypes.Role, adm.Perfil),
         };
         var token = new JwtSecurityToken(
             claims: claims,
@@ -141,8 +142,7 @@ app.MapGet("/administrador", ([FromQuery] int? pagina, IAdministradorServico adm
         });
     }
     return Results.Ok(adms);
-}).RequireAuthorization()
-.RequireAuthorization(new AuthorizeAttribute{Roles = "Adm"}).WithTags("Administrador");
+}).RequireAuthorization().RequireAuthorization(new AuthorizeAttribute {Roles = "Adm"}).WithTags("Administrador");
 
 app.MapGet("/administrador/{id}", ([FromRoute]int id, IAdministradorServico administradorServico) => {
     var admin = administradorServico.BuscaPorId(id);
@@ -245,7 +245,7 @@ app.MapGet("/Veiculos/{id}", ([FromRoute]int id, IVeiculoServico veiculoServico)
     
     return Results.Ok(veiculo);
 }).RequireAuthorization()
-.RequireAuthorization(new AuthorizeAttribute{Roles = "Adm"}).WithTags("Veiculos");
+.RequireAuthorization(new AuthorizeAttribute{Roles = "Adm,Editor"}).WithTags("Veiculos");
 
 app.MapPut("/Veiculos/{id}", ([FromRoute]int id, VeiculoDTO veiculoDTO, IVeiculoServico veiculoServico) => {
     var validacao = validaDTO(veiculoDTO);
